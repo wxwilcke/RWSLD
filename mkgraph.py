@@ -4,10 +4,7 @@ import logging
 import argparse
 from time import time
 
-#from rdflib import Graph
-
 from data.auxiliarly import is_writable
-#from data.readers.rdf import read
 from data.writers.rdf import write
 from interfaces.server import SQLServer
 from interfaces.schemas.databases import SchemaDB
@@ -34,21 +31,6 @@ def run(args, timestamp):
     if not is_writable(output_path):
         return
 
-    # set scope
-    #scope = None
-    #if database == 'disk':
-    #    if args.area is None:
-    #        scope = Area()
-    #    else:
-    #        scope = Area(float(args.area[0]),
-    #                    float(args.area[1]),
-    #                    float(args.area[2]),
-    #                    float(args.area[3]))
-    #else:
-    #    if args.reference_graph is None:
-    #        scope = Graph()
-    #    elif is_readable(args.reference_graph):
-    #        scope = read(args.reference_graph)
     if args.area is None:
         scope = Area()
     else:
@@ -116,7 +98,6 @@ if __name__ == "__main__":
                         choices=["n3", "nquads", "ntriples", "pretty-xml", "trig", "trix", "turtle", "xml"], default='turtle')
     parser.add_argument("-m", "--database_schema", help="""Database schema (JSON) used to map to RDF""", default=None)
     parser.add_argument("-o", "--output", help="Output file", default=None)
-    #parser.add_argument("--reference_graph", help="RDF graph (often DISK) holding root references", default=None)
     parser.add_argument("-s", "--server", help="""Login configuration of Microsoft SQL server:
                         '--server <user>:<password>@<server[:<port>]></database>'""",\
                         default=None)
