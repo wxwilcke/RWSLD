@@ -26,8 +26,8 @@ def translate(server, mapper, references, visited, time):
     global DEFAULT_NAMESPACE, DEFAULT_PREFIX, DEFAULT_SCHEMA_NAMESPACE, DEFAULT_SCHEMA_PREFIX
     DEFAULT_NAMESPACE = "http://www.rijkswaterstaat.nl/linked_data/{}/".format(database)
     DEFAULT_PREFIX = "rws.{}".format(database)
-    DEFAULT_SCHEMA_NAMESPACE = DEFAULT_NAMESPACE + "schema/"
-    DEFAULT_SCHEMA_PREFIX = DEFAULT_PREFIX + ".schema"
+    DEFAULT_SCHEMA_NAMESPACE = "http://www.rijkswaterstaat.nl/linked_data/schema/{}/".format(database)
+    DEFAULT_SCHEMA_PREFIX = "rws.schema.{}".format(database)
 
     # init graph instance
     g = Graph(identifier=gen_hash(database.upper(), time))

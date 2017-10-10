@@ -5,6 +5,10 @@ from statistics import mean, pstdev
 
 from distance import levenshtein
 
+from schema.auxiliarly import attributename_from_table,\
+                              classname_from_table,\
+                              relationname_from_table
+
 
 logger = getLogger(__name__)
 
@@ -49,7 +53,7 @@ def _table_to_schema(server, tables, table, datatypes_map, uml):
     subschema = {}
 
     subschema['link_table'] = True if table.lower().startswith('ktbl') else False
-    subschema['classname'] = _classname_from_table(server, table)
+    subschema['classname'] = classname_from_table(server.server.database, table)
     subschema['subClassOf'] = None
     subschema['include'] = True
 
@@ -81,7 +85,7 @@ def _attributes_from_table(table, columns, datatypes_map, schema_attributes):
     for column in columns:
         entry = column['column_name']
         if entry in valid_entries:
-            attributes[entry] = {'property': _attributename_from_table(entry),
+            attributes[entry] = {'property': attributename_from_table(entry),
                                  'subPropertyOf': None,
                                  'datatype': datatypes_map.as_xsd(column['data_type']),
                                  'include': True}
@@ -97,7 +101,7 @@ def _relations_from_table(server, table, columns, tables, schema_relations, uml)
         # if this is likely a link
         entry = column['column_name']
         if entry in valid_entries:
-            property_name = _relationname_from_table(entry)
+            property_name = relationname_from_table(entry)
             if uml is None:
                 referenced_table = valid_values[valid_entries.index(entry)]
                 include = True
@@ -108,7 +112,7 @@ def _relations_from_table(server, table, columns, tables, schema_relations, uml)
             relations[entry] = {'property': property_name,
                                 'subPropertyOf': None,
                                 'targettable': referenced_table,
-                                'targetclassname': _classname_from_table(server, referenced_table),
+                                'targetclassname': classname_from_table(server.server.database, referenced_table),
                                 'include': include}
 
     return relations
@@ -116,7 +120,7 @@ def _relations_from_table(server, table, columns, tables, schema_relations, uml)
 def _guess_table(server, name, tables):
     distances = []
     for table in tables:
-        classname = _classname_from_table(server, table)
+        classname = classname_from_table(server.server.database, table)
         distances.append((levenshtein(name, classname.lower()), table))
 
     min_value = min(distances)[0]
@@ -130,46 +134,3 @@ def _guess_table(server, name, tables):
         return ("?" + candidates[0] + "?", True)
 
     return (candidates[0], False)
-
-def _classname_from_table(server, name, delimiter='_'):
-    if name.startswith("?") and name.endswith("?"):
-        name = name[1:-1]
-
-        if "/" in name:
-            names = name.split("/")
-
-            classnames = "?"
-            for i in range(len(names)):
-                classnames += _classname_from_table(server, names[i])
-                if i < len(names) - 1:
-                    classnames += "/"
-
-            return classnames + "?"
-
-    if name.startswith("_"):
-        name = name[1:]
-
-    splitted = name.split(delimiter)
-    if splitted[0] == "":
-        splitted = splitted[1:]
-    if server.server.database == 'disk':
-        if splitted[0] == "ktbl" or splitted[0] == "tbl":
-            splitted = splitted[1:]
-
-    classname = ""
-    for w in splitted:
-        classname += w[0].upper() + w[1:]
-
-    return classname
-
-def _attributename_from_table(name):
-    return name.lower()
-
-def _relationname_from_table(name):
-    name = name.lower()
-    if name.endswith("_id"):
-        name = name[:-3]
-    elif name.endswith("id"):
-        name = name[:-2]
-
-    return name

@@ -17,7 +17,7 @@ from rdf.operators import gen_hash,\
 
 
 DEFAULT_NAMESPACE = "http://www.rijkswaterstaat.nl/linked_data/schema/"
-DEFAULT_PREFIX = "rws.schema."
+DEFAULT_PREFIX = "rws.schema"
 
 logger = getLogger(__name__)
 
@@ -26,9 +26,9 @@ def translate(database, mapper, time):
     """
 
     global DEFAULT_NAMESPACE
-    DEFAULT_NAMESPACE += "{}/".format(database)
+    DEFAULT_NAMESPACE += "{}".format(database)
     global DEFAULT_PREFIX
-    DEFAULT_PREFIX += "{}".format(database)
+    DEFAULT_PREFIX += ".{}".format(database)
 
     # init graph instance
     g = Graph(identifier=gen_hash(DEFAULT_PREFIX, time))
@@ -75,11 +75,14 @@ def _attribute_to_graph(g, classname, class_node, mapping):
     if mapping['subPropertyOf'] is not None:
         add_subPropertyOf(g, attr_node, URIRef(mapping['subPropertyOf']))
 
+def property_from_mapping(namespace, classname, propertyname):
+    return URIRef(namespace + "{}_{}".format(classname.lower(), propertyname.lower()))
+
 def _relation_to_graph(g, classname, class_node, mapping):
     ns = dict(g.namespace_manager.namespaces())
 
     # forward link
-    rel_node = URIRef(ns[DEFAULT_PREFIX] + "{}_{}".format(classname.lower(), mapping['property']))
+    rel_node = property_from_mapping(ns[DEFAULT_PREFIX], classname, mapping['property'])
     add_type(g, rel_node, URIRef(ns['owl'] + 'ObjectProperty'))
     add_domain(g, rel_node, class_node)
     add_range(g, rel_node, URIRef(ns[DEFAULT_PREFIX] + mapping['targetclassname']))

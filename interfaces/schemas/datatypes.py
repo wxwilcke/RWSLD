@@ -8,7 +8,7 @@ from interfaces.schema import Schema
 class SchemaDT(Schema):
     """
     {
-     'uri_1': ['datatype_1', 'datatype_2', ...],
+      'database': [{'source': ..., 'target': ...}],
      ...
      }"""
 
