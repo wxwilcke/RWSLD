@@ -19,10 +19,6 @@ def add_metadata(g, base_namespace, timestamp, database, is_ontology=False):
     ns = dict(g.namespace_manager.namespaces())
     base = URIRef(ns[base_namespace])
 
-    # number of triples (excluding meta data)
-    ntriples = Literal(len(g), datatype=URIRef(ns['xsd'] + 'nonNegativeInteger'))
-    add_property(g, base, ntriples, URIRef(ns['void'] + 'triples'))
-
     # type
     if is_ontology:
         add_type(g, base, URIRef(ns['owl'] + 'Ontology'))
@@ -67,6 +63,31 @@ def add_metadata(g, base_namespace, timestamp, database, is_ontology=False):
                              + "project.", lang="en")
     add_property(g, base, description_nl, URIRef(ns['dcterms'] + 'description'))
     add_property(g, base, description_en, URIRef(ns['dcterms'] + 'description'))
+
+    # number of triples 
+    ntriples = Literal(len(g)+1, datatype=URIRef(ns['xsd'] + 'nonNegativeInteger'))
+    add_property(g, base, ntriples, URIRef(ns['void'] + 'triples'))
+
+def update_metadata(g, base_namespace, timestamp):
+    logger.info("Updating meta-data")
+
+    # update namespaces
+    _update_namespaces(g.namespace_manager)
+
+    ns = dict(g.namespace_manager.namespaces())
+    base = base_namespace
+
+    # remove old data
+    g.remove((None, URIRef(ns['dcterms'] + 'modified'), None))
+    g.remove((None, URIRef(ns['void'] + 'triples'), None))
+
+    # modified
+    modified = Literal(datetime.fromtimestamp(timestamp).isoformat(), datatype=URIRef(ns['xsd'] + 'dateTime'))
+    add_property(g, base, modified, URIRef(ns['dcterms'] + 'modified'))
+
+    # number of triples
+    ntriples = Literal(len(g)+1, datatype=URIRef(ns['xsd'] + 'nonNegativeInteger'))
+    add_property(g, base, ntriples, URIRef(ns['void'] + 'triples'))
 
 def _update_namespaces(namespace_manager):
     """ Update Namespaces
