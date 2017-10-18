@@ -12,7 +12,7 @@ def write(graph, filename, sformat='turtle'):
     if splitext(filename)[1] == '':
         filename += get_ext(sformat)
 
-    logger.info("Writing RDF graph ({}) to {}".format(sformat, filename))
+    logger.info("Writing RDF graph ({}, {} triples) to {}".format(sformat, len(graph), filename))
     graph.serialize(destination=filename, format=sformat)
 
 def get_ext(sformat):

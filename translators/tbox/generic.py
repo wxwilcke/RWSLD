@@ -26,7 +26,7 @@ def translate(database, mapper, time):
     """
 
     global DEFAULT_NAMESPACE
-    DEFAULT_NAMESPACE += "{}".format(database)
+    DEFAULT_NAMESPACE += "{}/".format(database)
     global DEFAULT_PREFIX
     DEFAULT_PREFIX += ".{}".format(database)
 

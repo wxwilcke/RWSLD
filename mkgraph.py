@@ -6,6 +6,7 @@ from time import time
 
 from data.auxiliarly import is_writable
 from data.writers.rdf import write
+from interfaces.geodatabase import GeoDataBase
 from interfaces.server import SQLServer
 from interfaces.schemas.databases import SchemaDB
 from geo.area import Area
@@ -17,12 +18,11 @@ from ui.progress_indicator import ProgressIndicator
 
 
 def run(args, timestamp):
-    # connect to server
-    print("Connecting to server...")
-    server = SQLServer(args.server)
+    pi = ProgressIndicator()
 
-    # retrieve database selection
-    database = server.server.database
+    # load database mapping table
+    mapping = SchemaDB(args.database_schema)
+    database = mapping.database_name()
 
     # validate output path
     output_path = args.output
@@ -39,19 +39,34 @@ def run(args, timestamp):
                     float(args.area[2]),
                     float(args.area[3]))
 
-    # load database mapping table
-    mapping = SchemaDB(args.database_schema)
-
     # translate database to RDF
-    pi = ProgressIndicator()
     print("Translating {}...".format(database.upper()))
     pi.start()
-    graph = translate_database(server, database, mapping, scope, timestamp)
+    if args.gdb is not None:
+        graph = _run_gdb(args.gdb, mapping, scope, timestamp)
+    else:
+        graph = _run_sql(args.server, database, mapping, scope, timestamp)
     pi.stop()
 
     # write graph
     print("Writing graph to disk...")
     write(graph, output_path, args.serialization_format)
+
+def _run_gdb(gdb_path, mapping, scope, timestamp):
+    gdb = GeoDataBase(gdb_path)
+    return translate_kernGIS(gdb, mapping, scope, timestamp)
+
+def _run_sql(server, database, mapping, scope, timestamp):
+    # connect to server
+    print("Connecting to server...")
+    server = SQLServer(server)
+
+    graph = translate_database(server, database, mapping, scope, timestamp)
+
+    # close connection
+    server.disconnect()
+
+    return graph
 
 def translate_database(server, database, mapping, scope, timestamp):
     if database == "disk":
@@ -60,8 +75,6 @@ def translate_database(server, database, mapping, scope, timestamp):
         return translate_ultimo(server, mapping, scope, timestamp)
     elif database == "edo":
         return translate_edo(server, mapping, scope, timestamp)
-    elif database == "kernGIS":
-        return translate_kernGIS(server, mapping, scope, timestamp)
     else:
         raise NotImplementedError("No support for specified database")
 
@@ -103,6 +116,7 @@ if __name__ == "__main__":
                         default=None)
     parser.add_argument("-v", "--verbose", help="Increase output verbosity", action="store_true")
     parser.add_argument("--log_directory", help="Where to save the log file", default="../log/")
+    parser.add_argument("--gdb", help="GeoDataBase Path", default=None)
     args = parser.parse_args()
 
     set_logging(args, timestamp)

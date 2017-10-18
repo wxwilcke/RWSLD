@@ -6,10 +6,12 @@ from time import time
 
 from data.auxiliarly import is_writable, is_readable
 from data.writers.json import write
+from interfaces.geodatabase import GeoDataBase
 from interfaces.server import SQLServer
 from interfaces.schemas.datatypes import SchemaDT
 from interfaces.uml import UML
-from schema.generate import generate
+from schema.mssql import generate as generate_mssql
+from schema.gdb import generate as generate_gdb
 from ui.inspectors.schema import cli
 from ui.progress_indicator import ProgressIndicator
 
@@ -17,24 +19,10 @@ from ui.progress_indicator import ProgressIndicator
 DATATYPE_SCHEMA_PATH = "../schema/datatypes.json"
 
 def run(args, timestamp):
-    # connect to server
-    print("Connecting to server...")
-    server = SQLServer(args.server)
-
-    # retrieve database selection
-    database = server.server.database
-
-    # validate output path
-    output_path = args.output
-    if output_path is None:
-        output_path = "./{}_{}.json".format(database, timestamp)
-    if not is_writable(output_path):
-        return
+    pi = ProgressIndicator()
 
     # load data types mapping table
     datatypes_map_file = args.datatype_schema
-    if datatypes_map_file is None:
-        datatypes_map_file = DATATYPE_SCHEMA_PATH
     if not is_readable(datatypes_map_file):
         return
     datatypes_map = SchemaDT(datatypes_map_file)
@@ -46,15 +34,26 @@ def run(args, timestamp):
         uml = UML()
         uml.parse(uml_filename)
 
-    # generate schema
-    pi = ProgressIndicator()
-    print("Generating schema for {}...".format(database.upper()))
+    print("Generating schema...")
     pi.start()
-    schema = generate(server, datatypes_map, uml)
+
+    # determine database
+    database = ""
+    schema = None
+    if args.gdb is not None:
+        schema, database = _run_gdb(args, datatypes_map)
+    else:
+        schema, database = _run_sql(args, datatypes_map, uml)
+
     pi.stop()
 
-    # close connection
-    server.disconnect()
+
+    # validate output path
+    output_path = args.output
+    if output_path is None:
+        output_path = "./{}_{}.json".format(database, timestamp)
+    if not is_writable(output_path):
+        return
 
     # inspect resulting schema
     if args.interactive:
@@ -63,6 +62,27 @@ def run(args, timestamp):
     # write schema
     print("Writing schema to disk...")
     write(schema, output_path)
+
+def _run_gdb(args, datatypes_map):
+    if not is_readable(args.gdb):
+        return {}
+    gdb = GeoDataBase(args.gdb)
+
+    return (generate_gdb(gdb, datatypes_map), 'kerngis')
+
+def _run_sql(args, datatypes_map, uml):
+    # connect to server
+    print("Connecting to server...")
+    server = SQLServer(args.server)
+    database = server.server.database
+
+    # generate schema
+    schema = generate_mssql(server, datatypes_map, uml)
+
+    # close connection
+    server.disconnect()
+
+    return (schema, database)
 
 def print_header():
     header = 'Rijkswaterstaat Linked Data Pilot Project'
@@ -101,6 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", help="Increase output verbosity", action="store_true")
     parser.add_argument("--log_directory", help="Where to save the log file", default="../log/")
     parser.add_argument("--interactive", help="Enable interactive mode", default="store_true")
+    parser.add_argument("--gdb", help="GeoDataBase Path", default=None)
     parser.add_argument("--uml", help="Optional UML diagram", default=None)
     args = parser.parse_args()
 

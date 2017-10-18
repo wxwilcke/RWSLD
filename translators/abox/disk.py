@@ -3,7 +3,7 @@
 from logging import getLogger
 
 from rdf.metadata import add_metadata
-from translators.abox.generic import translate as translate_generic
+from translators.abox.generic_sql import translate as translate_generic
 from translators.references.reference_manager import ReferenceManager
 
 
