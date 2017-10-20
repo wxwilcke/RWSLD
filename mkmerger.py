@@ -16,7 +16,7 @@ def run(args, timestamp):
     if len(args.graphs) < 2:
         raise Exception("Requires at least 2 input graphs")
     _check_paths(args.graphs)
-    
+ 
     # validate output path
     output_path = args.output
     if output_path is None:

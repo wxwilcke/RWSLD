@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from re import match
+from re import fullmatch
 
 from interfaces.schema import Schema
 
@@ -39,13 +39,15 @@ class SchemaXR(Schema):
             if source is None or target is None:
                 continue
 
-            yield { 'source': { 'database': source.group('database'),
+            yield { 'source': { 'model': source.group('model'),
+                                'database': source.group('database'),
                                 'table': source.group('table'),
                                 'property': source.group('property') },
-                    'target': { 'database': target.group('database'),
+                    'target': { 'model': target.group('model'),
+                                'database': target.group('database'),
                                 'table': target.group('table'),
                                 'property': target.group('property') }
                   }
 
     def _decode(self, rule):
-        return match('(?P<database>[a-z]*).(?P<table>[A-Za-z_]*)(?:/)?(?P<property>[A-Za-z]*)?', rule)
+        return fullmatch('(?P<model>[a-z]*):(?P<database>[a-z]*).(?P<table>[\?]?[A-Za-z_]*)(?:/)?(?P<property>[A-Za-z]*)?', rule)

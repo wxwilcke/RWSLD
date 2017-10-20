@@ -46,13 +46,16 @@ def relationname_from_table(name):
     elif name.endswith("id"):
         name = name[:-2]
 
+    if name.startswith("_"):
+        name = name[1:]
+
     return name
 
 def attributename_from_layer(name):
     return "-".join(name.split('_')).lower()
 
 def classname_from_layer(name):
-    return name[1:]
+    return name[1:].title()
     #gtype, name = name[0], name[1:]
 
     #if gtype == 'p':

@@ -11,7 +11,8 @@ from rdf.metadata import add_metadata
 from rdf.namespace_wrapper import default_namespace_of
 from rdf.operators import gen_hash,\
                       add_property
-from schema.auxiliarly import classname_from_table,\
+from schema.auxiliarly import classname_from_layer,\
+                              classname_from_table,\
                               relationname_from_table
 from translators.tbox.generic import property_from_mapping
 
@@ -51,9 +52,12 @@ def _interlink(g, schema, source_database, target_database, source_graph, target
         source_def = relation['source']
         target_def = relation['target']
 
+        if target_def['database'] != target_database:
+            continue
+
         # define relation
-        source_class = classname_from_table(source_database, source_def['table'])
-        target_class = classname_from_table(target_database, target_def['table'])
+        source_class = _classname_from_def(source_database, source_def)
+        target_class = _classname_from_def(target_database, target_def)
         rel = _property_from_def(source_class, target_class, target_def['property'])
 
         # select target references
@@ -83,6 +87,12 @@ def _generate_query(source_class_uri, property_uri):
                                     ?source_id a <{}>  ;
                                        <{}> ?target_id .
                                     }}""".format(source_class_uri, property_uri))
+
+def _classname_from_def(database, definition):
+    if definition['model'] == 'sql':
+        return classname_from_table(database, definition['table'])
+    else:
+        return classname_from_layer(definition['table'])
 
 def _property_from_def(source_class, target_class, target_field):
     p = property_from_mapping(DEFAULT_SCHEMA_NAMESPACE, source_class, target_class)

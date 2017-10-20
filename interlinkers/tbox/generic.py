@@ -11,7 +11,8 @@ from rdf.operators import gen_hash,\
                         add_type,\
                         add_domain,\
                         add_range
-from schema.auxiliarly import classname_from_table,\
+from schema.auxiliarly import classname_from_layer,\
+                              classname_from_table,\
                               relationname_from_table
 from translators.tbox.generic import property_from_mapping
 
@@ -23,7 +24,7 @@ DEFAULT_SCHEMA_PREFIX = "rws.schema.xref"
 
 logger = getLogger(__name__)
 
-def link(schema, source_database, target_database, source_graph, target_graph, time):
+def link(schema, source_database, target_database, source_graph, target_graph, include_backlinks, time):
     """ Add interlinks
     """
     # init graph instance
@@ -31,6 +32,9 @@ def link(schema, source_database, target_database, source_graph, target_graph, t
 
     # add links
     _interlink(g, schema, source_database, target_database, source_graph, target_graph)
+
+    if include_backlinks:
+        _interlink(g, schema, target_database, source_database, target_graph, source_graph)
 
     # add meta-data
     add_metadata(g, DEFAULT_SCHEMA_PREFIX, time, "EXTRA", is_ontology=True)
@@ -50,9 +54,12 @@ def _interlink(g, schema, source_database, target_database, source_graph, target
         source_def = relation['source']
         target_def = relation['target']
 
+        if target_def['database'] != target_database:
+            continue
+
         # define relation
-        source_class = classname_from_table(source_database, source_def['table'])
-        target_class = classname_from_table(target_database, target_def['table'])
+        source_class = _classname_from_def(source_database, source_def)
+        target_class = _classname_from_def(target_database, target_def)
         rel = _property_from_def(source_class, target_class, target_def['property'])
 
         # forward link
@@ -61,6 +68,12 @@ def _interlink(g, schema, source_database, target_database, source_graph, target
         add_range(g, rel, URIRef(ns_tbox_target + "/" + target_class))
         add_label(g, rel, "Relatie tussen {} and {}".format(source_class,
                                                             target_class))
+
+def _classname_from_def(database, definition):
+    if definition['model'] == 'sql':
+        return classname_from_table(database, definition['table'])
+    else:
+        return classname_from_layer(definition['table'])
 
 def _property_from_def(source_class, target_class, target_field):
     p = property_from_mapping(DEFAULT_SCHEMA_NAMESPACE, source_class, target_class)

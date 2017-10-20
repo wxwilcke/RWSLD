@@ -41,6 +41,7 @@ def run(args, timestamp):
                              params['target_name'],\
                              params['source_graph'],\
                              params['target_graph'],\
+                             args.include_backlinks,\
                              timestamp)
     pi.stop()
 
@@ -146,6 +147,7 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output", help="Output file", default=None)
     parser.add_argument("--source_graph", help="Source RDF graph")
     parser.add_argument("--target_graph", help="Target RDF graph")
+    parser.add_argument("--include_backlinks", help="Include links from target to source", action="store_true")
     parser.add_argument("-v", "--verbose", help="Increase output verbosity", action="store_true")
     parser.add_argument("--log_directory", help="Where to save the log file", default="../log/")
     args = parser.parse_args()
