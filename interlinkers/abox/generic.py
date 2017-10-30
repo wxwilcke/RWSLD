@@ -33,7 +33,7 @@ def link(schema, source_database, target_database, source_graph, target_graph, t
     _interlink(g, schema, source_database, target_database, source_graph, target_graph)
 
     # add meta-data
-    add_metadata(g, DEFAULT_SCHEMA_PREFIX, time, "EXTRA")
+    add_metadata(g, DEFAULT_SCHEMA_PREFIX, time, "XREF")
 
     return g
 
