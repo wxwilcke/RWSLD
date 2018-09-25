@@ -19,7 +19,9 @@ Note that
 ## Example
 
 To generate a schema
+
 ```$ python mkschema.py --server "<username>:<password>@<host:port>/<database>/<user>" --output <database>.json --datatype_schema datatypes.json```
 
 To convert a DB to knowledge graph
+
 ```$ python mkgraph.py --server "<username>:<password>@<host:port>/<database>/<user>" --area "<X0> <Y0> <X1> <Y1>" --datatype_schema <database>.json --output <database>.ttl```
